@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tawheed Center - Registration Verification</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 12px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-content { display: flex; align-items: center; gap: 10px; }
+        .logo { font-size: 1.8rem; }
+        .header-text h1 { font-size: 1.2rem; margin-bottom: 2px; }
+        .header-text p { font-size: 0.8rem; opacity: 0.9; }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 260px; background: white; border-right: 1px solid #e0e0e0; padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .sidebar-section { padding-bottom: 12px; border-bottom: 1px solid #eee; }
+        .sidebar-title { font-size: 0.75rem; text-transform: uppercase; color: #666; margin-bottom: 10px; font-weight: 600; letter-spacing: 0.5px; }
+        .stats { background: #e9ecef; padding: 10px; border-radius: 6px; }
+        .stat-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #dee2e6; }
+        .stat-item:last-child { border-bottom: none; }
+        .stat-label { color: #666; font-size: 0.8rem; }
+        .stat-value { color: #1e3c72; font-weight: 600; font-size: 0.85rem; }
+        .content { flex: 1; padding: 15px; overflow-y: auto; }
+        .search-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-label { font-size: 0.85rem; color: #666; margin-bottom: 8px; display: block; }
+        .search-input-wrapper { position: relative; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #999; }
+        .search-input { width: 100%; padding: 12px 15px 12px 40px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: all 0.3s; }
+        .search-input:focus { outline: none; border-color: #1e3c72; box-shadow: 0 0 0 3px rgba(30,60,114,0.1); }
+        .search-input:disabled { background: #f5f5f5; cursor: not-allowed; }
+        .search-hint { margin-top: 8px; color: #999; font-size: 0.8rem; }
+        .results-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; }
+        .result-card { background: white; border-radius: 6px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; border-left: 3px solid #ddd; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .result-card.found { border-left-color: #28a745; }
+        .result-card.not-found { border-left-color: #dc3545; background: #fff5f5; }
+        .result-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #eee; }
+        .result-icon { font-size: 1.2rem; }
+        .result-title { font-size: 1rem; color: #333; }
+        .result-card.found .result-title { color: #28a745; }
+        .result-card.not-found .result-title { color: #dc3545; }
+        .result-details { display: grid; gap: 4px; }
+        .result-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+        .result-row:last-child { border-bottom: none; }
+        .result-label { color: #666; font-size: 0.85rem; }
+        .result-value { color: #333; font-weight: 500; text-align: right; max-width: 60%; word-break: break-word; font-size: 0.9rem; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 15px; }
+        .empty-state h3 { color: #666; margin-bottom: 8px; font-size: 1.1rem; }
+        .loading { text-align: center; color: #666; padding: 30px; }
+        .spinner { display: inline-block; width: 25px; height: 25px; border: 3px solid #f3f3f3; border-top: 3px solid #1e3c72; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        footer { background: #1e3c72; color: white; text-align: center; padding: 10px; font-size: 0.8rem; }
+        .match-count { background: #1e3c72; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 15px; display: inline-block; }
+
+        /* Ticket Summary */
+        .ticket-summary { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+        .donor-name-row { background: #f8f9fa; padding: 6px; border-radius: 4px; margin-bottom: 6px; }
+
+        /* Status */
+        .auto-load-status { padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 0.85rem; }
+        .auto-load-status.success { background: #d4edda; color: #155724; }
+        .auto-load-status.error { background: #f8d7da; color: #721c24; }
+        .auto-load-status.loading { background: #e9ecef; color: #666; }
+        .refresh-btn { background: #1e3c72; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; width: 100%; }
+        .refresh-btn:hover { background: #2a5298; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">🕌</div>
+            <div class="header-text">
+                <h1>Tawheed Center</h1>
+                <p>Annual Ramadan Fundraiser 2026 - Registration Verification</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">📁 Data Status</div>
+                <div id="loadStatus" class="auto-load-status loading">
+                    <div class="spinner"></div> Loading data...
+                </div>
+                <button id="refreshBtn" class="refresh-btn" style="display: none;" onclick="loadData()">
+                    🔄 Refresh Data
+                </button>
+            </div>
+
+            <div class="sidebar-section" id="statsSection" style="display: none;">
+                <div class="sidebar-title">📊 Statistics</div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Records</span>
+                        <span class="stat-value" id="totalRecords">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Name Column</span>
+                        <span class="stat-value" id="nameColumnStat">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">ℹ️ Instructions</div>
+                <div style="color: #666; font-size: 0.8rem; line-height: 1.5;">
+                    <p>1. Page auto-loads data</p>
+                    <p>2. Start typing to search</p>
+                    <p>3. See ticket summary</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <div class="search-container">
+                <label class="search-label" for="searchInput">Search by Donor Name</label>
+                <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Loading data..." disabled autocomplete="off">
+                </div>
+                <div class="search-hint" id="searchHint">Waiting for data...</div>
+            </div>
+
+            <div id="results">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <h3>Loading Data...</h3>
+                    <p>Please wait while the registration data loads</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer>Tawheed Center Registration Verification System</footer>
+
+    <script>
+        let registrationData = [];
+        let headers = [];
+        let donorColumnIndex = -1;
+        let ticketTypeColumnIndex = -1;
+        let ticketFeeColumnIndex = -1;
+        let searchTimeout = null;
+
+        const searchInput = document.getElementById('searchInput');
+        const searchHint = document.getElementById('searchHint');
+        const results = document.getElementById('results');
+        const loadStatus = document.getElementById('loadStatus');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const statsSection = document.getElementById('statsSection');
+
+        async function loadData() {
+            console.log('Loading data...');
+            searchInput.disabled = true;
+            searchInput.placeholder = "Loading data...";
+            searchHint.textContent = "Loading...";
+            loadStatus.className = 'auto-load-status loading';
+            loadStatus.innerHTML = '<div class="spinner"></div> Loading data...';
+            refreshBtn.style.display = 'none';
+
+            try {
+                const filename = 'all-tickets.xlsx';
+                console.log('Fetching:', filename);
+
+                const response = await fetch(filename);
+                console.log('Response:', response.status);
+
+                if (!response.ok) {
+                    throw new Error('File not found: ' + filename);
+                }
+
+                loadStatus.innerHTML = '<div class="spinner"></div> Processing...';
+                const data = await response.arrayBuffer();
+                console.log('Downloaded:', data.byteLength, 'bytes');
+
+                const uint8Array = new Uint8Array(data);
+                const workbook = XLSX.read(uint8Array, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                console.log('Rows:', jsonData.length);
+                headers = jsonData[0];
+                registrationData = jsonData.slice(1).filter(row =>
+                    row.some(cell => cell !== undefined && cell !== '' && cell !== null)
+                );
+
+                // Find columns
+                donorColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'donor');
+                ticketTypeColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('ticket') && h.toString().toLowerCase().includes('type'));
+                ticketFeeColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'ticket fee');
+
+                if (donorColumnIndex === -1) {
+                    throw new Error('Could not find "Donor" column');
+                }
+
+                // Fill down donor names
+                let lastDonor = '';
+                for (let i = 0; i < registrationData.length; i++) {
+                    const row = registrationData[i];
+                    if (row[donorColumnIndex] && row[donorColumnIndex].toString().trim()) {
+                        lastDonor = row[donorColumnIndex].toString().trim();
+                    } else {
+                        row[donorColumnIndex] = lastDonor;
+                    }
+                }
+
+                // Success
+                loadStatus.className = 'auto-load-status success';
+                loadStatus.innerHTML = '✓ Loaded ' + registrationData.length + ' records';
+                refreshBtn.style.display = 'block';
+
+                statsSection.style.display = 'block';
+                document.getElementById('totalRecords').textContent = registrationData.length;
+                document.getElementById('nameColumnStat').textContent = 'Donor';
+
+                searchInput.disabled = false;
+                searchInput.placeholder = "Start typing a donor name...";
+                searchInput.focus();
+                searchHint.textContent = "Type at least 2 characters to search";
+                showEmptyState();
+
+            } catch (error) {
+                console.error('Error:', error);
+                loadStatus.className = 'auto-load-status error';
+                loadStatus.innerHTML = '✗ Error: ' + error.message;
+                refreshBtn.style.display = 'block';
+            }
+        }
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            if (!query) { showEmptyState(); return; }
+            searchTimeout = setTimeout(() => performSearch(query), 200);
+        });
+
+        function performSearch(query) {
+            if (query.length < 2) { showEmptyState(); return; }
+            results.innerHTML = '<div class="loading"><div class="spinner"></div>Searching...</div>';
+
+            const matches = registrationData.filter(row => {
+                const cellValue = row[donorColumnIndex];
+                if (!cellValue) return false;
+                return cellValue.toString().toLowerCase().includes(query.toLowerCase());
+            });
+
+            displayResults(matches, query);
+        }
+
+        function displayResults(matches, query) {
+            results.innerHTML = '';
+
+            if (matches.length === 0) {
+                results.innerHTML = '<div class="result-card not-found"><div class="result-header"><span class="result-icon">❌</span><span class="result-title">No Match Found</span></div><p>No donor found matching "' + escapeHtml(query) + '"</p></div>';
+                return;
+            }
+
+            // Group by donor
+            const donorGroups = {};
+            matches.forEach(match => {
+                const donorName = match[donorColumnIndex]?.toString().trim() || 'Unknown';
+                if (!donorGroups[donorName]) donorGroups[donorName] = [];
+                donorGroups[donorName].push(match);
+            });
+
+            const matchCount = document.createElement('div');
+            matchCount.innerHTML = '<span class="match-count">' + Object.keys(donorGroups).length + ' donors (' + matches.length + ' tickets)</span>';
+            results.appendChild(matchCount);
+
+            const resultsContainer = document.createElement('div');
+            resultsContainer.className = 'results-container';
+
+            Object.entries(donorGroups).forEach(([donorName, donorTickets]) => {
+                const card = document.createElement('div');
+                card.className = 'result-card found';
+
+                // Count ticket types
+                let adultCount = 0, childCount = 0, otherCount = 0;
+                let totalFee = 0;
+
+                donorTickets.forEach(ticket => {
+                    const ticketType = ticket[ticketTypeColumnIndex]?.toString().toLowerCase() || '';
+                    if (ticketType.includes('adult')) adultCount++;
+                    else if (ticketType.includes('child')) childCount++;
+                    else otherCount++;
+
+                    if (ticketFeeColumnIndex !== -1) {
+                        const fee = parseFloat(ticket[ticketFeeColumnIndex]);
+                        if (!isNaN(fee)) totalFee += fee;
+                    }
+                });
+
+                const totalTickets = donorTickets.length;
+
+                // Build ticket summary (Adults and Children only)
+                let html = '<div class="ticket-summary" style="padding: 8px;">';
+                html += '<div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">';
+
+                if (adultCount > 0) html += '<div style="text-align: center; padding: 4px 8px; background: #d4edda; border-radius: 5px; min-width: 55px;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #333;">' + adultCount + '</span><span style="font-size: 0.65rem; color: #666;">👤 Adult' + (adultCount > 1 ? 's' : '') + '</span></div>';
+                if (childCount > 0) html += '<div style="text-align: center; padding: 4px 8px; background: #fff3cd; border-radius: 5px; min-width: 55px;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #333;">' + childCount + '</span><span style="font-size: 0.65rem; color: #666;">👶 Child' + (childCount > 1 ? 'ren' : '') + '</span></div>';
+                if (totalFee > 0) html += '<div style="text-align: center; padding: 4px 10px; background: #d1ecf1; border-radius: 5px; min-width: 60px; border: 1px solid #28a745;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #28a745;">$' + totalFee + '</span><span style="font-size: 0.65rem; color: #666;">Amount</span></div>';
+
+                html += '</div></div>';
+
+                // Donor details
+                html += '<div class="result-details">';
+                html += '<div class="result-row donor-name-row"><span class="result-label">Donor:</span><span class="result-value" style="color: #1e3c72; font-weight: 600;">' + escapeHtml(donorName) + '</span></div>';
+
+                const firstTicket = donorTickets[0];
+                const excluded = ['transaction date', 'payment method', 'purchase', 'ticket number', 'ticket type', 'registration method', 'ticket status', 'ticket fee', 'discounted amount', 'other fee', 'reference', 'address', 'registration status', 'amount paid'];
+
+                headers.forEach((header, index) => {
+                    if (header && index !== donorColumnIndex) {
+                        const headerLower = header.toString().toLowerCase().trim();
+                        if (excluded.includes(headerLower)) return;
+                        const value = firstTicket[index];
+                        if (value !== undefined && value !== '' && value !== null) {
+                            html += '<div class="result-row"><span class="result-label">' + escapeHtml(header) + ':</span><span class="result-value">' + escapeHtml(value) + '</span></div>';
+                        }
+                    }
+                });
+                html += '</div>';
+
+                card.innerHTML = '<div class="result-header"><span class="result-icon">✅</span><span class="result-title">Registration Found</span></div>' + html;
+                resultsContainer.appendChild(card);
+            });
+
+            results.appendChild(resultsContainer);
+        }
+
+        function showEmptyState() {
+            results.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Start Searching</h3><p>Type a donor name to see results</p></div>';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load on page load
+        window.addEventListener('load', loadData);
+    </script>
+</body>
+</html>
