@@ -164,11 +164,8 @@
             try {
                 // Use relative path for GitHub Pages compatibility
                 const filename = './all-tickets.xlsx';
-                console.log('Fetching:', filename);
-                console.log('Base URL:', window.location.href);
 
                 const response = await fetch(filename);
-                console.log('Response:', response.status);
 
                 if (!response.ok) {
                     throw new Error('File not found: ' + filename);
@@ -183,19 +180,26 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-                console.log('Rows:', jsonData.length);
                 headers = jsonData[0];
                 registrationData = jsonData.slice(1).filter(row =>
                     row.some(cell => cell !== undefined && cell !== '' && cell !== null)
                 );
 
-                // Find columns
+                // Find columns - flexible matching for GitHub Pages
                 donorColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'donor');
-                ticketTypeColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('ticket') && h.toString().toLowerCase().includes('type'));
-                ticketFeeColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'ticket fee');
 
-                console.log('Headers found:', headers);
-                console.log('Column indices - Donor:', donorColumnIndex, 'Ticket Type:', ticketTypeColumnIndex, 'Ticket Fee:', ticketFeeColumnIndex);
+                // Try multiple variations for ticket type column
+                ticketTypeColumnIndex = headers.findIndex(h => {
+                    if (!h) return false;
+                    const lower = h.toString().toLowerCase();
+                    return lower.includes('ticket') && lower.includes('type');
+                });
+                // Fallback: just look for 'type' column
+                if (ticketTypeColumnIndex === -1) {
+                    ticketTypeColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('type'));
+                }
+
+                ticketFeeColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'ticket fee');
 
                 if (donorColumnIndex === -1) {
                     throw new Error('Could not find "Donor" column. Headers: ' + headers.join(', '));
@@ -223,7 +227,7 @@
 
                 searchInput.disabled = false;
                 searchInput.placeholder = "Start typing a donor name...";
-                searchInput.focus();
+                // Removed autofocus to prevent warning
                 searchHint.textContent = "Type at least 2 characters to search";
                 showEmptyState();
 
@@ -286,12 +290,14 @@
                 let adultCount = 0, childCount = 0, otherCount = 0;
                 let totalFee = 0;
 
-                console.log('Processing', donorTickets.length, 'tickets for', donorName);
-                console.log('Ticket type column index:', ticketTypeColumnIndex);
+                // Fallback: find ticket type column by searching headers if not found
+                let typeCol = ticketTypeColumnIndex;
+                if (typeCol === -1) {
+                    typeCol = headers.findIndex(h => h && h.toString().toLowerCase().includes('type'));
+                }
 
-                donorTickets.forEach((ticket, idx) => {
-                    const ticketType = ticket[ticketTypeColumnIndex]?.toString().toLowerCase() || '';
-                    console.log('Ticket', idx, 'type:', ticketType);
+                donorTickets.forEach(ticket => {
+                    const ticketType = typeCol >= 0 ? (ticket[typeCol]?.toString().toLowerCase() || '') : '';
                     if (ticketType.includes('adult')) adultCount++;
                     else if (ticketType.includes('child')) childCount++;
                     else otherCount++;
