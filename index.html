@@ -162,8 +162,10 @@
             refreshBtn.style.display = 'none';
 
             try {
-                const filename = 'all-tickets.xlsx';
+                // Use relative path for GitHub Pages compatibility
+                const filename = './all-tickets.xlsx';
                 console.log('Fetching:', filename);
+                console.log('Base URL:', window.location.href);
 
                 const response = await fetch(filename);
                 console.log('Response:', response.status);
@@ -281,8 +283,12 @@
                 let adultCount = 0, childCount = 0, otherCount = 0;
                 let totalFee = 0;
 
-                donorTickets.forEach(ticket => {
+                console.log('Processing', donorTickets.length, 'tickets for', donorName);
+                console.log('Ticket type column index:', ticketTypeColumnIndex);
+
+                donorTickets.forEach((ticket, idx) => {
                     const ticketType = ticket[ticketTypeColumnIndex]?.toString().toLowerCase() || '';
+                    console.log('Ticket', idx, 'type:', ticketType);
                     if (ticketType.includes('adult')) adultCount++;
                     else if (ticketType.includes('child')) childCount++;
                     else otherCount++;
