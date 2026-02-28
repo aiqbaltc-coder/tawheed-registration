@@ -272,7 +272,7 @@
             refreshBtn.style.display = 'none';
 
             try {
-                const response = await fetch('./all-tickets.xlsx');
+                const response = await fetch('https://tawheed-checkin.web.app/all-tickets.xlsx');
                 if (!response.ok) throw new Error('Could not load all-tickets.xlsx');
 
                 loadStatus.innerHTML = '<div class="spinner"></div> Processing...';
