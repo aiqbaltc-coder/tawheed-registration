@@ -5,6 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tawheed Center - Registration Verification</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Firebase SDK (using compat version - works without local server) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCDlTpIAYsCCJiOdcdntHH69N5KcGcOLfU",
+            authDomain: "tawheed-checkin.firebaseapp.com",
+            databaseURL: "https://tawheed-checkin-default-rtdb.firebaseio.com",
+            projectId: "tawheed-checkin",
+            storageBucket: "tawheed-checkin.firebasestorage.app",
+            messagingSenderId: "1006226812211",
+            appId: "1:1006226812211:web:18f86c3190b4cb5cd3e246"
+        };
+
+        // Initialize Firebase
+        let db = null;
+        let checkinsRef = null;
+
+        try {
+            console.log('Initializing Firebase...');
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            checkinsRef = db.ref('checkins');
+            window.firebaseDb = {
+                db,
+                checkinsRef,
+                set: (ref, data) => ref.set(data),
+                update: (ref, data) => ref.update(data),
+                remove: (ref) => ref.remove(),
+                onValue: (ref, callback, errCallback) => ref.on('value', callback, errCallback),
+                ref: (path) => db.ref(path)
+            };
+            window.firebaseReady = true;
+            console.log('✅ Firebase initialized successfully!');
+        } catch (error) {
+            console.error('❌ Firebase initialization error:', error);
+            console.error('Error details:', error.message, error.stack);
+            window.firebaseDb = null;
+            window.firebaseReady = false;
+        }
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; }
@@ -27,25 +71,25 @@
         .search-label { font-size: 0.85rem; color: #666; margin-bottom: 8px; display: block; }
         .search-input-wrapper { position: relative; }
         .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #999; }
-        .search-input { width: 100%; padding: 12px 15px 12px 40px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: all 0.3s; }
+        .search-input { width: 100%; padding: 10px 15px 10px 40px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s; }
         .search-input:focus { outline: none; border-color: #1e3c72; box-shadow: 0 0 0 3px rgba(30,60,114,0.1); }
         .search-input:disabled { background: #f5f5f5; cursor: not-allowed; }
         .search-hint { margin-top: 8px; color: #999; font-size: 0.8rem; }
-        .results-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; }
-        .result-card { background: white; border-radius: 6px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; border-left: 3px solid #ddd; }
+        .results-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+        .result-card { background: white; border-radius: 4px; padding: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; border-left: 3px solid #ddd; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .result-card.found { border-left-color: #28a745; }
         .result-card.not-found { border-left-color: #dc3545; background: #fff5f5; }
-        .result-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #eee; }
-        .result-icon { font-size: 1.2rem; }
-        .result-title { font-size: 1rem; color: #333; }
+        .result-header { display: flex; align-items: center; gap: 3px; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px solid #eee; }
+        .result-icon { font-size: 0.85rem; }
+        .result-title { font-size: 0.8rem; color: #333; }
         .result-card.found .result-title { color: #28a745; }
         .result-card.not-found .result-title { color: #dc3545; }
-        .result-details { display: grid; gap: 4px; }
-        .result-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+        .result-details { display: grid; gap: 1px; }
+        .result-row { display: flex; justify-content: space-between; padding: 1px 0; border-bottom: 1px solid #f0f0f0; }
         .result-row:last-child { border-bottom: none; }
-        .result-label { color: #666; font-size: 0.85rem; }
-        .result-value { color: #333; font-weight: 500; text-align: right; max-width: 60%; word-break: break-word; font-size: 0.9rem; }
+        .result-label { color: #666; font-size: 0.7rem; }
+        .result-value { color: #333; font-weight: 500; text-align: right; max-width: 60%; word-break: break-word; font-size: 0.75rem; }
         .empty-state { text-align: center; padding: 40px 20px; color: #999; }
         .empty-state-icon { font-size: 3rem; margin-bottom: 15px; }
         .empty-state h3 { color: #666; margin-bottom: 8px; font-size: 1.1rem; }
@@ -53,11 +97,11 @@
         .spinner { display: inline-block; width: 25px; height: 25px; border: 3px solid #f3f3f3; border-top: 3px solid #1e3c72; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 8px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         footer { background: #1e3c72; color: white; text-align: center; padding: 10px; font-size: 0.8rem; }
-        .match-count { background: #1e3c72; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 15px; display: inline-block; }
+        .match-count { background: #1e3c72; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; margin-bottom: 5px; display: inline-block; }
 
         /* Ticket Summary */
-        .ticket-summary { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
-        .donor-name-row { background: #f8f9fa; padding: 6px; border-radius: 4px; margin-bottom: 6px; }
+        .ticket-summary { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 4px; padding: 4px; margin-bottom: 4px; }
+        .donor-name-row { background: #f8f9fa; padding: 3px; border-radius: 3px; margin-bottom: 3px; }
 
         /* Status */
         .auto-load-status { padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 0.85rem; }
@@ -66,6 +110,120 @@
         .auto-load-status.loading { background: #e9ecef; color: #666; }
         .refresh-btn { background: #1e3c72; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; width: 100%; }
         .refresh-btn:hover { background: #2a5298; }
+
+        /* Check-in Section Styles */
+        .checkin-section {
+            margin-top: 6px;
+            padding: 6px 8px;
+            background: #f0f4f8;
+            border-radius: 5px;
+            border: 1px solid #d0dbe4;
+        }
+        .checkin-header {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 5px;
+        }
+        .checkin-status-icon {
+            font-size: 0.85rem;
+        }
+        .checkin-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1e3c72;
+        }
+        .checkin-counter {
+            text-align: center;
+            margin-bottom: 3px;
+        }
+        .counter-display {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+        .counter-display .separator {
+            margin: 0 2px;
+            color: #999;
+        }
+        .counter-display .total-count {
+            color: #666;
+        }
+        .counter-label {
+            display: block;
+            font-size: 0.65rem;
+            color: #666;
+            margin-top: 1px;
+        }
+        .checkin-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 3px;
+        }
+        .btn {
+            border: none;
+            padding: 6px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-minus {
+            background: #dc3545;
+            color: white;
+            min-width: 28px;
+            font-size: 1rem;
+            padding: 6px 8px;
+        }
+        .btn-minus:hover:not(:disabled) {
+            background: #c82333;
+        }
+        .btn-checkin {
+            background: #28a745;
+            color: white;
+            flex: 1;
+        }
+        .btn-checkin:hover:not(:disabled) {
+            background: #218838;
+        }
+        .btn-plus {
+            background: #28a745;
+            color: white;
+            min-width: 28px;
+            font-size: 1rem;
+            padding: 6px 8px;
+        }
+        .btn-plus:hover:not(:disabled) {
+            background: #218838;
+        }
+        .checkin-progress {
+            height: 5px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #34d57e 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .progress-bar.complete {
+            background: linear-gradient(90deg, #1e7e34 0%, #28a745 100%);
+        }
+        .checkin-section.complete {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .checkin-section.complete .checkin-title {
+            color: #155724;
+        }
     </style>
 </head>
 <body>
@@ -144,6 +302,9 @@
         let ticketTypeColumnIndex = -1;
         let ticketFeeColumnIndex = -1;
         let searchTimeout = null;
+
+        // Check-in related variables
+        let checkinData = {};
 
         const searchInput = document.getElementById('searchInput');
         const searchHint = document.getElementById('searchHint');
@@ -275,10 +436,6 @@
                 donorGroups[donorName].push(match);
             });
 
-            const matchCount = document.createElement('div');
-            matchCount.innerHTML = '<span class="match-count">' + Object.keys(donorGroups).length + ' donors (' + matches.length + ' tickets)</span>';
-            results.appendChild(matchCount);
-
             const resultsContainer = document.createElement('div');
             resultsContainer.className = 'results-container';
 
@@ -296,8 +453,9 @@
                     typeCol = headers.findIndex(h => h && h.toString().toLowerCase().includes('type'));
                 }
 
-                donorTickets.forEach(ticket => {
-                    const ticketType = typeCol >= 0 ? (ticket[typeCol]?.toString().toLowerCase() || '') : '';
+                donorTickets.forEach((ticket, idx) => {
+                    const ticketTypeValue = typeCol >= 0 ? ticket[typeCol] : '';
+                    const ticketType = ticketTypeValue ? ticketTypeValue.toString().toLowerCase() : '';
                     if (ticketType.includes('adult')) adultCount++;
                     else if (ticketType.includes('child')) childCount++;
                     else otherCount++;
@@ -310,8 +468,16 @@
 
                 const totalTickets = donorTickets.length;
 
-                // Build ticket summary - ALWAYS show Adult/Child breakdown
-                let html = '<div class="ticket-summary" style="padding: 8px;">';
+                // Get or create check-in info for this donor
+                const checkinInfo = getCheckinInfo(donorName, totalTickets);
+                const checkedIn = checkinInfo.checkedIn;
+                const remaining = totalTickets - checkedIn;
+                const isComplete = checkedIn >= totalTickets;
+                const percentage = totalTickets > 0 ? (checkedIn / totalTickets) * 100 : 0;
+
+                // Build ticket summary
+                let html = '';
+                html += '<div class="ticket-summary" style="padding: 8px;">';
                 html += '<div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">';
 
                 // Always show Adult count (even if 0)
@@ -343,6 +509,60 @@
                 });
                 html += '</div>';
 
+                // Check-in Status Section
+                html += '<div class="checkin-section' + (isComplete ? ' complete' : '') + '">';
+
+                // Check-in header with icon
+                html += '<div class="checkin-header">';
+                html += '<span class="checkin-status-icon">' + (isComplete ? '✅' : '📋') + '</span>';
+                html += '<span class="checkin-title">' + (isComplete ? 'Fully Checked In' : 'Check-in Status') + '</span>';
+                html += '</div>';
+
+                // Counter display
+                html += '<div class="checkin-counter">';
+                html += '<div class="counter-display">';
+                html += '<span class="checked-in-count">' + checkedIn + '</span>';
+                html += '<span class="separator">/</span>';
+                html += '<span class="total-count">' + totalTickets + '</span>';
+                html += '</div>';
+                html += '<span class="counter-label">' + remaining + ' ticket' + (remaining !== 1 ? 's' : '') + ' remaining</span>';
+                html += '</div>';
+
+                // Check-in controls (only show if not complete)
+                if (!isComplete) {
+                    html += '<div class="checkin-controls">';
+
+                    // Minus button (disabled if none checked in)
+                    html += '<button class="btn btn-minus" onclick="decrementCheckIn(\'' + escapeForOnclick(donorName) + '\')" ' + (checkedIn === 0 ? 'disabled' : '') + '>';
+                    html += '−';
+                    html += '</button>';
+
+                    // Check-in button
+                    html += '<button class="btn btn-checkin" onclick="checkInTickets(\'' + escapeForOnclick(donorName) + '\', 1)">';
+                    html += 'Check In 1';
+                    html += '</button>';
+
+                    // Plus button (disabled if at max)
+                    html += '<button class="btn btn-plus" onclick="checkInTickets(\'' + escapeForOnclick(donorName) + '\', 1)" ' + (checkedIn >= totalTickets ? 'disabled' : '') + '>';
+                    html += '+';
+                    html += '</button>';
+
+                    html += '</div>';
+                } else {
+                    html += '<div class="checkin-controls">';
+                    html += '<button class="btn btn-checkin" onclick="resetCheckIn(\'' + escapeForOnclick(donorName) + '\')" style="background: #dc3545;">';
+                    html += 'Reset Check-in';
+                    html += '</button>';
+                    html += '</div>';
+                }
+
+                // Progress bar
+                html += '<div class="checkin-progress">';
+                html += '<div class="progress-bar' + (isComplete ? ' complete' : '') + '" style="width: ' + percentage + '%"></div>';
+                html += '</div>';
+
+                html += '</div>'; // End checkin-section
+
                 card.innerHTML = '<div class="result-header"><span class="result-icon">✅</span><span class="result-title">Registration Found</span></div>' + html;
                 resultsContainer.appendChild(card);
             });
@@ -360,8 +580,172 @@
             return div.innerHTML;
         }
 
+        // Normalize donor name for storage key (case-insensitive, trim whitespace)
+        function normalizeDonorName(donorName) {
+            return donorName.toString().trim().toUpperCase();
+        }
+
+        // Escape donor name for use in onclick handlers
+        function escapeForOnclick(text) {
+            return text
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n');
+        }
+
+        // Function to load check-in data from Firebase (real-time sync)
+        function loadCheckinData() {
+            // Wait for Firebase to be initialized
+            const checkReady = setInterval(() => {
+                if (window.firebaseReady && window.firebaseDb) {
+                    clearInterval(checkReady);
+
+                    const { onValue, checkinsRef } = window.firebaseDb;
+
+                    // Set up real-time listener for check-in data
+                    onValue(checkinsRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            checkinData = data;
+                            console.log('Loaded check-in data for', Object.keys(checkinData).length, 'donors');
+                            // Refresh current search results if any
+                            const searchInput = document.getElementById('searchInput');
+                            if (searchInput && searchInput.value.trim().length >= 2) {
+                                performSearch(searchInput.value.trim());
+                            }
+                        } else {
+                            checkinData = {};
+                        }
+                    }, (error) => {
+                        console.error('Firebase read error:', error);
+                        alert('Error connecting to check-in database. Check your internet connection.');
+                    });
+
+                    console.log('Firebase real-time listener activated');
+                }
+            }, 100);
+
+            // Timeout after 10 seconds
+            setTimeout(() => clearInterval(checkReady), 10000);
+        }
+
+        // Function to save check-in data to Firebase
+        function saveCheckinData() {
+            if (!window.firebaseDb) {
+                console.error('Firebase not initialized');
+                alert('Database not connected. Check-in cannot be saved.');
+                return;
+            }
+
+            const { update } = window.firebaseDb;
+
+            update(window.firebaseDb.checkinsRef, checkinData)
+                .then(() => console.log('Check-in data saved to Firebase'))
+                .catch(error => {
+                    console.error('Error saving to Firebase:', error);
+                    alert('Could not save check-in data. Please check your connection.');
+                });
+        }
+
+        // Get check-in info for a donor, creates entry if needed
+        function getCheckinInfo(donorName, totalTickets) {
+            const normalizedName = normalizeDonorName(donorName);
+
+            if (!checkinData[normalizedName]) {
+                checkinData[normalizedName] = {
+                    checkedIn: 0,
+                    total: totalTickets,
+                    lastUpdated: new Date().toISOString()
+                };
+                saveCheckinData();
+            } else {
+                // Update total if it changed
+                if (checkinData[normalizedName].total !== totalTickets) {
+                    checkinData[normalizedName].total = totalTickets;
+                    if (checkinData[normalizedName].checkedIn > totalTickets) {
+                        checkinData[normalizedName].checkedIn = totalTickets;
+                    }
+                    saveCheckinData();
+                }
+            }
+
+            return checkinData[normalizedName];
+        }
+
+        // Check in tickets for a donor
+        function checkInTickets(donorName, count) {
+            const normalizedName = normalizeDonorName(donorName);
+
+            if (!checkinData[normalizedName]) {
+                alert('Donor check-in data not found. Please search for the donor first.');
+                return;
+            }
+
+            const newCheckedIn = checkinData[normalizedName].checkedIn + count;
+            const maxAllowed = checkinData[normalizedName].total;
+
+            if (newCheckedIn > maxAllowed) {
+                alert(`Cannot check in more than ${maxAllowed} tickets. Only ${maxAllowed - checkinData[normalizedName].checkedIn} remaining.`);
+                return;
+            }
+
+            checkinData[normalizedName].checkedIn = newCheckedIn;
+            checkinData[normalizedName].lastUpdated = new Date().toISOString();
+            saveCheckinData();
+
+            // Refresh search results
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput.value.trim().length >= 2) {
+                performSearch(searchInput.value.trim());
+            }
+        }
+
+        // Decrease check-in count for a donor
+        function decrementCheckIn(donorName) {
+            const normalizedName = normalizeDonorName(donorName);
+
+            if (!checkinData[normalizedName]) {
+                return;
+            }
+
+            if (checkinData[normalizedName].checkedIn > 0) {
+                checkinData[normalizedName].checkedIn--;
+                checkinData[normalizedName].lastUpdated = new Date().toISOString();
+                saveCheckinData();
+
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput.value.trim().length >= 2) {
+                    performSearch(searchInput.value.trim());
+                }
+            }
+        }
+
+        // Reset check-in count to zero for a donor
+        function resetCheckIn(donorName) {
+            const normalizedName = normalizeDonorName(donorName);
+
+            if (!checkinData[normalizedName]) {
+                return;
+            }
+
+            if (confirm('Reset check-in count to 0 for ' + donorName + '?')) {
+                checkinData[normalizedName].checkedIn = 0;
+                checkinData[normalizedName].lastUpdated = new Date().toISOString();
+                saveCheckinData();
+
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput.value.trim().length >= 2) {
+                    performSearch(searchInput.value.trim());
+                }
+            }
+        }
+
         // Load on page load
-        window.addEventListener('load', loadData);
+        window.addEventListener('load', () => {
+            loadCheckinData();
+            loadData();
+        });
     </script>
 </body>
 </html>
