@@ -125,105 +125,27 @@
             gap: 4px;
             margin-bottom: 5px;
         }
-        .checkin-status-icon {
-            font-size: 0.85rem;
-        }
-        .checkin-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #1e3c72;
-        }
-        .checkin-counter {
-            text-align: center;
-            margin-bottom: 3px;
-        }
-        .counter-display {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1e3c72;
-        }
-        .counter-display .separator {
-            margin: 0 2px;
-            color: #999;
-        }
-        .counter-display .total-count {
-            color: #666;
-        }
-        .counter-label {
-            display: block;
-            font-size: 0.65rem;
-            color: #666;
-            margin-top: 1px;
-        }
-        .checkin-controls {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-bottom: 3px;
-        }
-        .btn {
-            border: none;
-            padding: 6px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-            font-weight: 600;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .btn-minus {
-            background: #dc3545;
-            color: white;
-            min-width: 28px;
-            font-size: 1rem;
-            padding: 6px 8px;
-        }
-        .btn-minus:hover:not(:disabled) {
-            background: #c82333;
-        }
-        .btn-checkin {
-            background: #28a745;
-            color: white;
-            flex: 1;
-        }
-        .btn-checkin:hover:not(:disabled) {
-            background: #218838;
-        }
-        .btn-plus {
-            background: #28a745;
-            color: white;
-            min-width: 28px;
-            font-size: 1rem;
-            padding: 6px 8px;
-        }
-        .btn-plus:hover:not(:disabled) {
-            background: #218838;
-        }
-        .checkin-progress {
-            height: 5px;
-            background: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #28a745 0%, #34d57e 100%);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-        .progress-bar.complete {
-            background: linear-gradient(90deg, #1e7e34 0%, #28a745 100%);
-        }
-        .checkin-section.complete {
-            background: #d4edda;
-            border-color: #c3e6cb;
-        }
-        .checkin-section.complete .checkin-title {
-            color: #155724;
-        }
+        .checkin-status-icon { font-size: 0.85rem; }
+        .checkin-title { font-size: 0.75rem; font-weight: 600; color: #1e3c72; }
+        .checkin-counter { text-align: center; margin-bottom: 3px; }
+        .counter-display { font-size: 1rem; font-weight: 700; color: #1e3c72; }
+        .counter-display .separator { margin: 0 2px; color: #999; }
+        .counter-display .total-count { color: #666; }
+        .counter-label { display: block; font-size: 0.65rem; color: #666; margin-top: 1px; }
+        .checkin-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+        .btn { border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: 700; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-minus { background: #dc3545; color: white; flex: 1; padding: 8px; font-size: 1rem; }
+        .btn-minus:hover:not(:disabled) { background: #c82333; }
+        .btn-plus { background: #28a745; color: white; flex: 1; padding: 8px; font-size: 1rem; }
+        .btn-plus:hover:not(:disabled) { background: #218838; }
+        .btn-reset { background: #dc3545; color: white; width: 100%; padding: 12px; font-size: 1.1rem; font-weight: 700; }
+        .btn-reset:hover { background: #c82333; }
+        .checkin-progress { height: 5px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #28a745 0%, #34d57e 100%); border-radius: 4px; transition: width 0.3s ease; }
+        .progress-bar.complete { background: linear-gradient(90deg, #1e7e34 0%, #28a745 100%); }
+        .checkin-section.complete { background: #d4edda; border-color: #c3e6cb; }
+        .checkin-section.complete .checkin-title { color: #155724; }
     </style>
 </head>
 <body>
@@ -232,7 +154,7 @@
             <div class="logo">🕌</div>
             <div class="header-text">
                 <h1>Tawheed Center</h1>
-                <p>Annual Ramadan Fundraiser 2026 - Registration Verification</p>
+                <p>Annual Hifz Fundraiser 2026 - Registration Verification</p>
             </div>
         </div>
     </header>
@@ -296,15 +218,10 @@
     <footer>Tawheed Center Registration Verification System</footer>
 
     <script>
+        // registrationData: array of { displayName, normalizedName, adultCount, childCount, totalTickets }
         let registrationData = [];
-        let headers = [];
-        let donorColumnIndex = -1;
-        let ticketTypeColumnIndex = -1;
-        let ticketFeeColumnIndex = -1;
-        let searchTimeout = null;
-
-        // Check-in related variables
         let checkinData = {};
+        let searchTimeout = null;
 
         const searchInput = document.getElementById('searchInput');
         const searchHint = document.getElementById('searchHint');
@@ -314,7 +231,6 @@
         const statsSection = document.getElementById('statsSection');
 
         async function loadData() {
-            console.log('Loading data...');
             searchInput.disabled = true;
             searchInput.placeholder = "Loading data...";
             searchHint.textContent = "Loading...";
@@ -323,77 +239,92 @@
             refreshBtn.style.display = 'none';
 
             try {
-                // Use relative path for GitHub Pages compatibility
-                const filename = './all-tickets.xlsx';
-
-                const response = await fetch(filename);
-
-                if (!response.ok) {
-                    throw new Error('File not found: ' + filename);
-                }
+                const response = await fetch('./all-tickets.xlsx');
+                if (!response.ok) throw new Error('Could not load all-tickets.xlsx');
 
                 loadStatus.innerHTML = '<div class="spinner"></div> Processing...';
-                const data = await response.arrayBuffer();
-                console.log('Downloaded:', data.byteLength, 'bytes');
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                const uint8Array = new Uint8Array(data);
-                const workbook = XLSX.read(uint8Array, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                const headers = rows[0];
+                const donorCol = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'donor');
+                const typeCol  = headers.findIndex(h => h && h.toString().toLowerCase().includes('ticket') && h.toString().toLowerCase().includes('type'));
 
-                headers = jsonData[0];
-                registrationData = jsonData.slice(1).filter(row =>
-                    row.some(cell => cell !== undefined && cell !== '' && cell !== null)
-                );
+                if (donorCol === -1) throw new Error('Could not find "Donor" column');
 
-                // Find columns - flexible matching for GitHub Pages
-                donorColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'donor');
+                const phoneCol      = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'phone number');
+                const emailCol      = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'email address');
+                const eventTitleCol = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'event title');
+                const feeCol        = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'ticket fee');
 
-                // Try multiple variations for ticket type column
-                ticketTypeColumnIndex = headers.findIndex(h => {
-                    if (!h) return false;
-                    const lower = h.toString().toLowerCase();
-                    return lower.includes('ticket') && lower.includes('type');
-                });
-                // Fallback: just look for 'type' column
-                if (ticketTypeColumnIndex === -1) {
-                    ticketTypeColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().includes('type'));
-                }
-
-                ticketFeeColumnIndex = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'ticket fee');
-
-                if (donorColumnIndex === -1) {
-                    throw new Error('Could not find "Donor" column. Headers: ' + headers.join(', '));
-                }
-
-                // Fill down donor names
+                // Fill down donor names, then group by normalized name
+                const donorMap = {};
                 let lastDonor = '';
-                for (let i = 0; i < registrationData.length; i++) {
-                    const row = registrationData[i];
-                    if (row[donorColumnIndex] && row[donorColumnIndex].toString().trim()) {
-                        lastDonor = row[donorColumnIndex].toString().trim();
-                    } else {
-                        row[donorColumnIndex] = lastDonor;
+                rows.slice(1).forEach(row => {
+                    if (row[donorCol] && row[donorCol].toString().trim()) {
+                        lastDonor = row[donorCol].toString().trim();
                     }
-                }
+                    if (!lastDonor) return;
 
-                // Success
+                    const key = lastDonor.toUpperCase();
+                    if (!donorMap[key]) {
+                        donorMap[key] = {
+                            displayName: lastDonor,
+                            normalizedName: key,
+                            adultCount: 0,
+                            childCount: 0,
+                            totalTickets: 0,
+                            totalFee: 0,
+                            phone: '',
+                            email: '',
+                            eventTitle: ''
+                        };
+                    }
+
+                    // Capture contact details from first row of this donor
+                    if (!donorMap[key].phone && phoneCol >= 0 && row[phoneCol]) {
+                        donorMap[key].phone = row[phoneCol].toString().trim();
+                    }
+                    if (!donorMap[key].email && emailCol >= 0 && row[emailCol]) {
+                        donorMap[key].email = row[emailCol].toString().trim();
+                    }
+                    if (!donorMap[key].eventTitle && eventTitleCol >= 0 && row[eventTitleCol]) {
+                        donorMap[key].eventTitle = row[eventTitleCol].toString().trim();
+                    }
+
+                    const ticketType = typeCol >= 0 && row[typeCol] ? row[typeCol].toString().toLowerCase() : '';
+                    if (ticketType.includes('adult')) {
+                        donorMap[key].adultCount++;
+                    } else if (ticketType.includes('child')) {
+                        donorMap[key].childCount++;
+                    }
+
+                    if (feeCol >= 0) {
+                        const fee = parseFloat(row[feeCol]);
+                        if (!isNaN(fee)) donorMap[key].totalFee += fee;
+                    }
+
+                    donorMap[key].totalTickets++;
+                });
+
+                registrationData = Object.values(donorMap);
+
                 loadStatus.className = 'auto-load-status success';
-                loadStatus.innerHTML = '✓ Loaded ' + registrationData.length + ' records';
+                loadStatus.innerHTML = '✓ Loaded ' + registrationData.length + ' donors';
                 refreshBtn.style.display = 'block';
-
                 statsSection.style.display = 'block';
                 document.getElementById('totalRecords').textContent = registrationData.length;
                 document.getElementById('nameColumnStat').textContent = 'Donor';
 
                 searchInput.disabled = false;
                 searchInput.placeholder = "Start typing a donor name...";
-                // Removed autofocus to prevent warning
                 searchHint.textContent = "Type at least 2 characters to search";
                 showEmptyState();
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error loading Excel:', error);
                 loadStatus.className = 'auto-load-status error';
                 loadStatus.innerHTML = '✗ Error: ' + error.message;
                 refreshBtn.style.display = 'block';
@@ -410,13 +341,9 @@
         function performSearch(query) {
             if (query.length < 2) { showEmptyState(); return; }
             results.innerHTML = '<div class="loading"><div class="spinner"></div>Searching...</div>';
-
-            const matches = registrationData.filter(row => {
-                const cellValue = row[donorColumnIndex];
-                if (!cellValue) return false;
-                return cellValue.toString().toLowerCase().includes(query.toLowerCase());
-            });
-
+            const matches = registrationData.filter(d =>
+                d.displayName.toLowerCase().includes(query.toLowerCase())
+            );
             displayResults(matches, query);
         }
 
@@ -428,97 +355,49 @@
                 return;
             }
 
-            // Group by donor
-            const donorGroups = {};
-            matches.forEach(match => {
-                const donorName = match[donorColumnIndex]?.toString().trim() || 'Unknown';
-                if (!donorGroups[donorName]) donorGroups[donorName] = [];
-                donorGroups[donorName].push(match);
-            });
-
             const resultsContainer = document.createElement('div');
             resultsContainer.className = 'results-container';
 
-            Object.entries(donorGroups).forEach(([donorName, donorTickets]) => {
+            matches.forEach(donor => {
                 const card = document.createElement('div');
                 card.className = 'result-card found';
 
-                // Count ticket types
-                let adultCount = 0, childCount = 0, otherCount = 0;
-                let totalFee = 0;
+                const donorName    = donor.displayName;
+                const normalizedName = donor.normalizedName;
+                const totalTickets = donor.totalTickets;
+                const adultCount   = donor.adultCount;
+                const childCount   = donor.childCount;
+                const totalFee     = donor.totalFee;
 
-                // Find ticket type column
-                let typeCol = ticketTypeColumnIndex;
-                if (typeCol === -1) {
-                    typeCol = headers.findIndex(h => h && h.toString().toLowerCase().includes('type'));
-                }
-
-                donorTickets.forEach((ticket, idx) => {
-                    const ticketTypeValue = typeCol >= 0 ? ticket[typeCol] : '';
-                    const ticketType = ticketTypeValue ? ticketTypeValue.toString().toLowerCase() : '';
-                    if (ticketType.includes('adult')) adultCount++;
-                    else if (ticketType.includes('child')) childCount++;
-                    else otherCount++;
-
-                    if (ticketFeeColumnIndex !== -1) {
-                        const fee = parseFloat(ticket[ticketFeeColumnIndex]);
-                        if (!isNaN(fee)) totalFee += fee;
-                    }
-                });
-
-                const totalTickets = donorTickets.length;
-
-                // Get or create check-in info for this donor
-                const checkinInfo = getCheckinInfo(donorName, totalTickets);
-                const checkedIn = checkinInfo.checkedIn;
+                const checkinInfo = checkinData[normalizedName] || { checkedIn: 0, total: totalTickets };
+                const checkedIn = checkinInfo.checkedIn || 0;
                 const remaining = totalTickets - checkedIn;
                 const isComplete = checkedIn >= totalTickets;
                 const percentage = totalTickets > 0 ? (checkedIn / totalTickets) * 100 : 0;
 
-                // Build ticket summary
                 let html = '';
                 html += '<div class="ticket-summary" style="padding: 8px;">';
                 html += '<div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">';
-
-                // Always show Adult count (even if 0)
-                html += '<div style="text-align: center; padding: 4px 8px; background: #d4edda; border-radius: 5px; min-width: 55px;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #333;">' + adultCount + '</span><span style="font-size: 0.65rem; color: #666;">👤 Adult' + (adultCount > 1 ? 's' : '') + '</span></div>';
-
-                // Always show Child count (even if 0)
-                html += '<div style="text-align: center; padding: 4px 8px; background: #fff3cd; border-radius: 5px; min-width: 55px;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #333;">' + childCount + '</span><span style="font-size: 0.65rem; color: #666;">👶 Child' + (childCount > 1 ? 'ren' : '') + '</span></div>';
-
-                if (totalFee > 0) html += '<div style="text-align: center; padding: 4px 10px; background: #d1ecf1; border-radius: 5px; min-width: 60px; border: 1px solid #28a745;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #28a745;">$' + totalFee + '</span><span style="font-size: 0.65rem; color: #666;">Amount</span></div>';
-
+                html += '<div style="text-align: center; padding: 4px 8px; background: #d4edda; border-radius: 5px; min-width: 55px;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #333;">' + adultCount + '</span><span style="font-size: 0.65rem; color: #666;">👤 Adult' + (adultCount !== 1 ? 's' : '') + '</span></div>';
+                html += '<div style="text-align: center; padding: 4px 8px; background: #fff3cd; border-radius: 5px; min-width: 55px;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #333;">' + childCount + '</span><span style="font-size: 0.65rem; color: #666;">👶 Child' + (childCount !== 1 ? 'ren' : '') + '</span></div>';
+                if (totalFee > 0) {
+                    html += '<div style="text-align: center; padding: 4px 10px; background: #d1ecf1; border-radius: 5px; min-width: 60px; border: 1px solid #28a745;"><span style="display: block; font-size: 1.2rem; font-weight: 700; color: #28a745;">$' + totalFee + '</span><span style="font-size: 0.65rem; color: #666;">Amount</span></div>';
+                }
                 html += '</div></div>';
 
-                // Donor details
                 html += '<div class="result-details">';
                 html += '<div class="result-row donor-name-row"><span class="result-label">Donor:</span><span class="result-value" style="color: #1e3c72; font-weight: 600;">' + escapeHtml(donorName) + '</span></div>';
-
-                const firstTicket = donorTickets[0];
-                const excluded = ['transaction date', 'payment method', 'purchase', 'ticket number', 'ticket type', 'registration method', 'ticket status', 'ticket fee', 'discounted amount', 'other fee', 'reference', 'address', 'registration status', 'amount paid'];
-
-                headers.forEach((header, index) => {
-                    if (header && index !== donorColumnIndex) {
-                        const headerLower = header.toString().toLowerCase().trim();
-                        if (excluded.includes(headerLower)) return;
-                        const value = firstTicket[index];
-                        if (value !== undefined && value !== '' && value !== null) {
-                            html += '<div class="result-row"><span class="result-label">' + escapeHtml(header) + ':</span><span class="result-value">' + escapeHtml(value) + '</span></div>';
-                        }
-                    }
-                });
+                if (donor.phone)      html += '<div class="result-row"><span class="result-label">Phone Number:</span><span class="result-value">' + escapeHtml(donor.phone) + '</span></div>';
+                if (donor.email)      html += '<div class="result-row"><span class="result-label">Email Address:</span><span class="result-value">' + escapeHtml(donor.email) + '</span></div>';
+                if (donor.eventTitle) html += '<div class="result-row"><span class="result-label">Event Title:</span><span class="result-value">' + escapeHtml(donor.eventTitle) + '</span></div>';
                 html += '</div>';
 
-                // Check-in Status Section
                 html += '<div class="checkin-section' + (isComplete ? ' complete' : '') + '">';
-
-                // Check-in header with icon
                 html += '<div class="checkin-header">';
                 html += '<span class="checkin-status-icon">' + (isComplete ? '✅' : '📋') + '</span>';
                 html += '<span class="checkin-title">' + (isComplete ? 'Fully Checked In' : 'Check-in Status') + '</span>';
                 html += '</div>';
 
-                // Counter display
                 html += '<div class="checkin-counter">';
                 html += '<div class="counter-display">';
                 html += '<span class="checked-in-count">' + checkedIn + '</span>';
@@ -528,40 +407,15 @@
                 html += '<span class="counter-label">' + remaining + ' ticket' + (remaining !== 1 ? 's' : '') + ' remaining</span>';
                 html += '</div>';
 
-                // Check-in controls (only show if not complete)
-                if (!isComplete) {
-                    html += '<div class="checkin-controls">';
+                html += '<div class="checkin-controls">';
+                html += '<button class="btn btn-minus" onclick="decrementCheckIn(\'' + escapeForOnclick(donorName) + '\')" ' + (checkedIn === 0 ? 'disabled' : '') + '>−</button>';
+                html += '<button class="btn btn-plus" onclick="checkInTickets(\'' + escapeForOnclick(donorName) + '\', 1)" ' + (checkedIn >= totalTickets ? 'disabled' : '') + '>+</button>';
+                html += '</div>';
 
-                    // Minus button (disabled if none checked in)
-                    html += '<button class="btn btn-minus" onclick="decrementCheckIn(\'' + escapeForOnclick(donorName) + '\')" ' + (checkedIn === 0 ? 'disabled' : '') + '>';
-                    html += '−';
-                    html += '</button>';
-
-                    // Check-in button
-                    html += '<button class="btn btn-checkin" onclick="checkInTickets(\'' + escapeForOnclick(donorName) + '\', 1)">';
-                    html += 'Check In 1';
-                    html += '</button>';
-
-                    // Plus button (disabled if at max)
-                    html += '<button class="btn btn-plus" onclick="checkInTickets(\'' + escapeForOnclick(donorName) + '\', 1)" ' + (checkedIn >= totalTickets ? 'disabled' : '') + '>';
-                    html += '+';
-                    html += '</button>';
-
-                    html += '</div>';
-                } else {
-                    html += '<div class="checkin-controls">';
-                    html += '<button class="btn btn-checkin" onclick="resetCheckIn(\'' + escapeForOnclick(donorName) + '\')" style="background: #dc3545;">';
-                    html += 'Reset Check-in';
-                    html += '</button>';
-                    html += '</div>';
-                }
-
-                // Progress bar
                 html += '<div class="checkin-progress">';
                 html += '<div class="progress-bar' + (isComplete ? ' complete' : '') + '" style="width: ' + percentage + '%"></div>';
                 html += '</div>';
-
-                html += '</div>'; // End checkin-section
+                html += '</div>';
 
                 card.innerHTML = '<div class="result-header"><span class="result-icon">✅</span><span class="result-title">Registration Found</span></div>' + html;
                 resultsContainer.appendChild(card);
@@ -580,12 +434,10 @@
             return div.innerHTML;
         }
 
-        // Normalize donor name for storage key (case-insensitive, trim whitespace)
         function normalizeDonorName(donorName) {
             return donorName.toString().trim().toUpperCase();
         }
 
-        // Escape donor name for use in onclick handlers
         function escapeForOnclick(text) {
             return text
                 .replace(/\\/g, '\\\\')
@@ -594,43 +446,23 @@
                 .replace(/\n/g, '\\n');
         }
 
-        // Function to load check-in data from Firebase (real-time sync)
         function loadCheckinData() {
-            // Wait for Firebase to be initialized
             const checkReady = setInterval(() => {
                 if (window.firebaseReady && window.firebaseDb) {
                     clearInterval(checkReady);
-
-                    const { onValue, checkinsRef } = window.firebaseDb;
-
-                    // Set up real-time listener for check-in data
-                    onValue(checkinsRef, (snapshot) => {
-                        const data = snapshot.val();
-                        if (data) {
-                            checkinData = data;
-                            console.log('Loaded check-in data for', Object.keys(checkinData).length, 'donors');
-                            // Refresh current search results if any
-                            const searchInput = document.getElementById('searchInput');
-                            if (searchInput && searchInput.value.trim().length >= 2) {
-                                performSearch(searchInput.value.trim());
-                            }
-                        } else {
-                            checkinData = {};
+                    window.firebaseDb.onValue(window.firebaseDb.checkinsRef, (snapshot) => {
+                        checkinData = snapshot.val() || {};
+                        if (searchInput.value.trim().length >= 2) {
+                            performSearch(searchInput.value.trim());
                         }
                     }, (error) => {
                         console.error('Firebase read error:', error);
-                        alert('Error connecting to check-in database. Check your internet connection.');
                     });
-
-                    console.log('Firebase real-time listener activated');
                 }
             }, 100);
-
-            // Timeout after 10 seconds
             setTimeout(() => clearInterval(checkReady), 10000);
         }
 
-        // Function to save check-in data to Firebase
         function saveCheckinData() {
             if (!window.firebaseDb) {
                 console.error('Firebase not initialized');
@@ -648,42 +480,46 @@
                 });
         }
 
-        // Get check-in info for a donor, creates entry if needed
         function getCheckinInfo(donorName, totalTickets) {
             const normalizedName = normalizeDonorName(donorName);
-
             if (!checkinData[normalizedName]) {
-                checkinData[normalizedName] = {
-                    checkedIn: 0,
-                    total: totalTickets,
-                    lastUpdated: new Date().toISOString()
-                };
-                saveCheckinData();
-            } else {
-                // Update total if it changed
-                if (checkinData[normalizedName].total !== totalTickets) {
-                    checkinData[normalizedName].total = totalTickets;
-                    if (checkinData[normalizedName].checkedIn > totalTickets) {
-                        checkinData[normalizedName].checkedIn = totalTickets;
-                    }
-                    saveCheckinData();
-                }
+                return { checkedIn: 0, total: totalTickets };
             }
-
             return checkinData[normalizedName];
         }
 
-        // Check in tickets for a donor
+        function updateCheckButtonLabel(qtyInputId) {
+            var input = document.getElementById(qtyInputId);
+            var btn = document.getElementById('btn-' + qtyInputId);
+            if (!input || !btn) return;
+            var n = parseInt(input.value, 10);
+            if (isNaN(n) || n < 1) n = 1;
+            btn.textContent = 'Check in ' + n + (n === 1 ? ' ticket' : ' tickets');
+        }
+
+        function checkInFromInput(donorName, qtyInputId) {
+            var input = document.getElementById(qtyInputId);
+            if (!input) return;
+            var count = parseInt(input.value, 10);
+            if (isNaN(count) || count < 1) {
+                alert('Please enter a number (1 or more).');
+                return;
+            }
+            checkInTickets(donorName, count);
+            input.value = '1';
+        }
+
         function checkInTickets(donorName, count) {
             const normalizedName = normalizeDonorName(donorName);
+            const donor = registrationData.find(d => d.normalizedName === normalizedName);
+            const totalTickets = donor ? donor.totalTickets : 0;
 
             if (!checkinData[normalizedName]) {
-                alert('Donor check-in data not found. Please search for the donor first.');
-                return;
+                checkinData[normalizedName] = { checkedIn: 0, total: totalTickets, lastUpdated: new Date().toISOString() };
             }
 
             const newCheckedIn = checkinData[normalizedName].checkedIn + count;
-            const maxAllowed = checkinData[normalizedName].total;
+            const maxAllowed = checkinData[normalizedName].total || totalTickets;
 
             if (newCheckedIn > maxAllowed) {
                 alert(`Cannot check in more than ${maxAllowed} tickets. Only ${maxAllowed - checkinData[normalizedName].checkedIn} remaining.`);
@@ -694,20 +530,16 @@
             checkinData[normalizedName].lastUpdated = new Date().toISOString();
             saveCheckinData();
 
-            // Refresh search results
             const searchInput = document.getElementById('searchInput');
             if (searchInput.value.trim().length >= 2) {
                 performSearch(searchInput.value.trim());
             }
         }
 
-        // Decrease check-in count for a donor
         function decrementCheckIn(donorName) {
             const normalizedName = normalizeDonorName(donorName);
 
-            if (!checkinData[normalizedName]) {
-                return;
-            }
+            if (!checkinData[normalizedName]) return;
 
             if (checkinData[normalizedName].checkedIn > 0) {
                 checkinData[normalizedName].checkedIn--;
@@ -721,13 +553,10 @@
             }
         }
 
-        // Reset check-in count to zero for a donor
         function resetCheckIn(donorName) {
             const normalizedName = normalizeDonorName(donorName);
 
-            if (!checkinData[normalizedName]) {
-                return;
-            }
+            if (!checkinData[normalizedName]) return;
 
             if (confirm('Reset check-in count to 0 for ' + donorName + '?')) {
                 checkinData[normalizedName].checkedIn = 0;
@@ -741,7 +570,6 @@
             }
         }
 
-        // Load on page load
         window.addEventListener('load', () => {
             loadCheckinData();
             loadData();
