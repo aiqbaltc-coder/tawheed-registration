@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tawheed Center - Registration Verification</title>
+    <title>Tawheed Center - Check In</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <!-- Firebase SDK (using compat version - works without local server) -->
@@ -54,7 +54,7 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; }
         .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 12px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header-content { display: flex; align-items: center; gap: 10px; }
-        .logo { font-size: 1.8rem; }
+        .logo { height: 52px; width: auto; display: block; object-fit: contain; }
         .header-text h1 { font-size: 1.2rem; margin-bottom: 2px; }
         .header-text p { font-size: 0.8rem; opacity: 0.9; }
         .main-container { display: flex; flex: 1; overflow: hidden; }
@@ -146,15 +146,62 @@
         .progress-bar.complete { background: linear-gradient(90deg, #1e7e34 0%, #28a745 100%); }
         .checkin-section.complete { background: #d4edda; border-color: #c3e6cb; }
         .checkin-section.complete .checkin-title { color: #155724; }
+
+        /* ── Mobile responsive ── */
+        @media (max-width: 640px) {
+            .header { padding: 10px 14px; }
+            .logo { height: 38px; }
+            .header-text h1 { font-size: 1rem; }
+            .header-text p { font-size: 0.7rem; }
+
+            /* Stack sidebar above content */
+            .main-container { flex-direction: column; overflow: visible; }
+
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 10px 14px;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                overflow-y: visible;
+            }
+            .sidebar-section {
+                flex: 1 1 auto;
+                min-width: 140px;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+
+            .content { padding: 10px 14px; overflow-y: visible; }
+
+            /* Full-width single column cards on mobile */
+            .results-container { grid-template-columns: 1fr; }
+
+            /* Bigger touch targets for buttons */
+            .btn-minus, .btn-plus { padding: 12px; font-size: 1.1rem; }
+            .btn-reset { padding: 14px; font-size: 1rem; }
+            .refresh-btn { padding: 10px; font-size: 0.9rem; }
+
+            /* Larger search input */
+            .search-input { font-size: 1rem; padding: 12px 15px 12px 42px; }
+
+            /* Bigger counter text */
+            .counter-display { font-size: 1.2rem; }
+
+            /* Wider result values */
+            .result-value { max-width: 70%; }
+        }
     </style>
 </head>
 <body>
     <header class="header">
         <div class="header-content">
-            <div class="logo">🕌</div>
+            <img class="logo" src="https://www.tawheedcenter.org/wp-content/uploads/2020/03/whitelogo.png" alt="Tawheed Center">
             <div class="header-text">
                 <h1>Tawheed Center</h1>
-                <p>Annual Hifz Fundraiser 2026 - Registration Verification</p>
+                <p id="headerEventTitle">Check In</p>
             </div>
         </div>
     </header>
@@ -171,33 +218,20 @@
                 </button>
             </div>
 
-            <div class="sidebar-section" id="statsSection" style="display: none;">
-                <div class="sidebar-title">📊 Statistics</div>
-                <div class="stats">
-                    <div class="stat-item">
-                        <span class="stat-label">Total Records</span>
-                        <span class="stat-value" id="totalRecords">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Name Column</span>
-                        <span class="stat-value" id="nameColumnStat">-</span>
-                    </div>
-                </div>
-            </div>
-
             <div class="sidebar-section">
                 <div class="sidebar-title">ℹ️ Instructions</div>
                 <div style="color: #666; font-size: 0.8rem; line-height: 1.5;">
                     <p>1. Page auto-loads data</p>
-                    <p>2. Start typing to search</p>
-                    <p>3. See ticket summary</p>
+                    <p>2. Type a registrant name to search</p>
+                    <p>3. Use <strong>−</strong> to decrease check-in (uncheck 1)</p>
+                    <p>4. Use <strong>+</strong> to increase check-in (check in 1)</p>
                 </div>
             </div>
         </aside>
 
         <main class="content">
             <div class="search-container">
-                <label class="search-label" for="searchInput">Search by Donor Name</label>
+                <label class="search-label" for="searchInput">Search by Registrant Name</label>
                 <div class="search-input-wrapper">
                     <span class="search-icon">🔍</span>
                     <input type="text" id="searchInput" class="search-input" placeholder="Loading data..." disabled autocomplete="off">
@@ -215,7 +249,7 @@
         </main>
     </div>
 
-    <footer>Tawheed Center Registration Verification System</footer>
+    <footer>Tawheed Center Check In System</footer>
 
     <script>
         // registrationData: array of { displayName, normalizedName, adultCount, childCount, totalTickets }
@@ -228,7 +262,6 @@
         const results = document.getElementById('results');
         const loadStatus = document.getElementById('loadStatus');
         const refreshBtn = document.getElementById('refreshBtn');
-        const statsSection = document.getElementById('statsSection');
 
         async function loadData() {
             searchInput.disabled = true;
@@ -248,7 +281,15 @@
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                const headers = rows[0];
+                // Find the real header row (contains "Donor" column)
+                let headerRowIndex = 0;
+                for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                    if (rows[i] && rows[i].some(h => h && h.toString().toLowerCase().trim() === 'donor')) {
+                        headerRowIndex = i;
+                        break;
+                    }
+                }
+                const headers = rows[headerRowIndex];
                 const donorCol = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'donor');
                 const typeCol  = headers.findIndex(h => h && h.toString().toLowerCase().includes('ticket') && h.toString().toLowerCase().includes('type'));
 
@@ -262,7 +303,7 @@
                 // Fill down donor names, then group by normalized name
                 const donorMap = {};
                 let lastDonor = '';
-                rows.slice(1).forEach(row => {
+                rows.slice(headerRowIndex + 1).forEach(row => {
                     if (row[donorCol] && row[donorCol].toString().trim()) {
                         lastDonor = row[donorCol].toString().trim();
                     }
@@ -312,14 +353,17 @@
                 registrationData = Object.values(donorMap);
 
                 loadStatus.className = 'auto-load-status success';
-                loadStatus.innerHTML = '✓ Loaded ' + registrationData.length + ' donors';
+                const totalRows = rows.slice(headerRowIndex + 1).filter(r => r.some(c => c !== undefined && c !== '' && c !== null)).length;
+                const firstEventTitle = registrationData.find(d => d.eventTitle)?.eventTitle;
+                if (firstEventTitle) {
+                    document.getElementById('headerEventTitle').textContent = firstEventTitle + ' - Check In';
+                }
+
+                loadStatus.innerHTML = '✓ Loaded ' + totalRows + ' registrants';
                 refreshBtn.style.display = 'block';
-                statsSection.style.display = 'block';
-                document.getElementById('totalRecords').textContent = registrationData.length;
-                document.getElementById('nameColumnStat').textContent = 'Donor';
 
                 searchInput.disabled = false;
-                searchInput.placeholder = "Start typing a donor name...";
+                searchInput.placeholder = "Start typing a registrant name...";
                 searchHint.textContent = "Type at least 2 characters to search";
                 showEmptyState();
 
@@ -351,7 +395,7 @@
             results.innerHTML = '';
 
             if (matches.length === 0) {
-                results.innerHTML = '<div class="result-card not-found"><div class="result-header"><span class="result-icon">❌</span><span class="result-title">No Match Found</span></div><p>No donor found matching "' + escapeHtml(query) + '"</p></div>';
+                results.innerHTML = '<div class="result-card not-found"><div class="result-header"><span class="result-icon">❌</span><span class="result-title">No Match Found</span></div><p>No registrant found matching "' + escapeHtml(query) + '"</p></div>';
                 return;
             }
 
@@ -386,7 +430,7 @@
                 html += '</div></div>';
 
                 html += '<div class="result-details">';
-                html += '<div class="result-row donor-name-row"><span class="result-label">Donor:</span><span class="result-value" style="color: #1e3c72; font-weight: 600;">' + escapeHtml(donorName) + '</span></div>';
+                html += '<div class="result-row donor-name-row"><span class="result-label">Registrant:</span><span class="result-value" style="color: #1e3c72; font-weight: 600;">' + escapeHtml(donorName) + '</span></div>';
                 if (donor.phone)      html += '<div class="result-row"><span class="result-label">Phone Number:</span><span class="result-value">' + escapeHtml(donor.phone) + '</span></div>';
                 if (donor.email)      html += '<div class="result-row"><span class="result-label">Email Address:</span><span class="result-value">' + escapeHtml(donor.email) + '</span></div>';
                 if (donor.eventTitle) html += '<div class="result-row"><span class="result-label">Event Title:</span><span class="result-value">' + escapeHtml(donor.eventTitle) + '</span></div>';
@@ -425,7 +469,7 @@
         }
 
         function showEmptyState() {
-            results.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Start Searching</h3><p>Type a donor name to see results</p></div>';
+            results.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Start Searching</h3><p>Type a registrant name to see results</p></div>';
         }
 
         function escapeHtml(text) {
