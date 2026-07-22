@@ -146,6 +146,9 @@
         .progress-bar.complete { background: linear-gradient(90deg, #1e7e34 0%, #28a745 100%); }
         .checkin-section.complete { background: #d4edda; border-color: #c3e6cb; }
         .checkin-section.complete .checkin-title { color: #155724; }
+        .checkin-section.no-tickets { background: #fff3cd; border-color: #ffe69c; }
+        .checkin-section.no-tickets .checkin-title { color: #856404; }
+        .no-tickets-message { font-size: 0.75rem; color: #6b5a1f; text-align: center; margin: 2px 0 0; line-height: 1.4; }
 
         /* ── Mobile responsive ── */
         @media (max-width: 640px) {
@@ -493,30 +496,42 @@
                 if (donor.eventTitle) html += '<div class="result-row"><span class="result-label">Event Title:</span><span class="result-value">' + escapeHtml(donor.eventTitle) + '</span></div>';
                 html += '</div>';
 
-                html += '<div class="checkin-section' + (isComplete ? ' complete' : '') + '">';
-                html += '<div class="checkin-header">';
-                html += '<span class="checkin-status-icon">' + (isComplete ? '✅' : '📋') + '</span>';
-                html += '<span class="checkin-title">' + (isComplete ? 'Fully Checked In' : 'Check-in Status') + '</span>';
-                html += '</div>';
+                const hasNoDinnerTickets = hasTicketTypes && adultCount === 0 && childCount === 0;
 
-                html += '<div class="checkin-counter">';
-                html += '<div class="counter-display">';
-                html += '<span class="checked-in-count">' + checkedIn + '</span>';
-                html += '<span class="separator">/</span>';
-                html += '<span class="total-count">' + totalTickets + '</span>';
-                html += '</div>';
-                html += '<span class="counter-label">' + remaining + ' ticket' + (remaining !== 1 ? 's' : '') + ' remaining</span>';
-                html += '</div>';
+                if (hasNoDinnerTickets) {
+                    html += '<div class="checkin-section no-tickets">';
+                    html += '<div class="checkin-header">';
+                    html += '<span class="checkin-status-icon">🏆</span>';
+                    html += '<span class="checkin-title">Competition Only</span>';
+                    html += '</div>';
+                    html += '<p class="no-tickets-message">This registrant did not purchase any dinner tickets. They only registered for the competition.</p>';
+                    html += '</div>';
+                } else {
+                    html += '<div class="checkin-section' + (isComplete ? ' complete' : '') + '">';
+                    html += '<div class="checkin-header">';
+                    html += '<span class="checkin-status-icon">' + (isComplete ? '✅' : '📋') + '</span>';
+                    html += '<span class="checkin-title">' + (isComplete ? 'Fully Checked In' : 'Check-in Status') + '</span>';
+                    html += '</div>';
 
-                html += '<div class="checkin-controls">';
-                html += '<button class="btn btn-minus" onclick="decrementCheckIn(\'' + escapeForOnclick(donorName) + '\')" ' + (checkedIn === 0 ? 'disabled' : '') + '>−</button>';
-                html += '<button class="btn btn-plus" onclick="checkInTickets(\'' + escapeForOnclick(donorName) + '\', 1)" ' + (checkedIn >= totalTickets ? 'disabled' : '') + '>+</button>';
-                html += '</div>';
+                    html += '<div class="checkin-counter">';
+                    html += '<div class="counter-display">';
+                    html += '<span class="checked-in-count">' + checkedIn + '</span>';
+                    html += '<span class="separator">/</span>';
+                    html += '<span class="total-count">' + totalTickets + '</span>';
+                    html += '</div>';
+                    html += '<span class="counter-label">' + remaining + ' ticket' + (remaining !== 1 ? 's' : '') + ' remaining</span>';
+                    html += '</div>';
 
-                html += '<div class="checkin-progress">';
-                html += '<div class="progress-bar' + (isComplete ? ' complete' : '') + '" style="width: ' + percentage + '%"></div>';
-                html += '</div>';
-                html += '</div>';
+                    html += '<div class="checkin-controls">';
+                    html += '<button class="btn btn-minus" onclick="decrementCheckIn(\'' + escapeForOnclick(donorName) + '\')" ' + (checkedIn === 0 ? 'disabled' : '') + '>−</button>';
+                    html += '<button class="btn btn-plus" onclick="checkInTickets(\'' + escapeForOnclick(donorName) + '\', 1)" ' + (checkedIn >= totalTickets ? 'disabled' : '') + '>+</button>';
+                    html += '</div>';
+
+                    html += '<div class="checkin-progress">';
+                    html += '<div class="progress-bar' + (isComplete ? ' complete' : '') + '" style="width: ' + percentage + '%"></div>';
+                    html += '</div>';
+                    html += '</div>';
+                }
 
                 card.innerHTML = '<div class="result-header"><span class="result-icon">✅</span><span class="result-title">Registration Found</span></div>' + html;
                 resultsContainer.appendChild(card);
